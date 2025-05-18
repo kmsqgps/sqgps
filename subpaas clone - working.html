@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navixy Clone Tool (SubPAAS Flow)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        .section {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+         .section label {
+            display: inline-block; /* Allows label to sit next to input */
+            margin-bottom: 5px;
+            font-weight: bold;
+         }
+         .section input[type="text"],
+         .section input[type="number"],
+         .section button {
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+             /* Basic alignment */
+             display: inline-block;
+             vertical-align: top; /* Align buttons/inputs at the top */
+         }
+
+        .message-area {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            min-height: 1em; /* Reserve space */
+            border: 1px solid transparent; /* Add border to make coloring visible */
+        }
+        .message-area.info { color: black; border-color: gray; background-color: #f0f0f0; }
+        .message-area.success { color: green; border-color: green; background-color: #e6ffe6;}
+        .message-area.error { color: red; border-color: red; background-color: #ffe6e6;}
+        .message-area.loading { color: #007bff; border-color: #007bff; background-color: #e6f3ff;}
+
+        select {
+            width: 100%; /* Selects need to fill container */
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding/border in element's total width */
+        }
+        select[multiple] {
+             min-height: 150px; /* Give the selectable list some height */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Navixy Tracker Cloning Tool (SubPAAS Session Flow)</h1>
+
+    <div>
+        <label for="hashInput">Enter your Primary Navixy API Hash:</label><br>
+        <input type="password" id="hashInput" name="hashInput" size="50" placeholder="Enter your primary hash here">
+        <button id="fetchSubpaasListButton">Fetch SubPAAS List</button>
+    </div>
+
+    <div id="mainMessageArea" class="message-area info"></div>
+
+    <div id="subpaasListSection" class="section">
+        <h2>Available SubPAAS (Select one)</h2>
+        <div id="subpaasListArea">
+            </div>
+    </div>
+
+    <div id="trackerListSection" class="section">
+        <h2>Trackers from Selected SubPAAS (Select one or more to clone)</h2>
+        <div id="trackerListArea">
+            </div>
+         <div id="trackerMessageArea" class="message-area info"></div>
+    </div>
+
+     <div id="cloneSection" class="section">
+         <h2>Clone Trackers to User</h2>
+         <div>
+             <label for="userIdInput">Target User ID:</label>
+             <input type="text" id="userIdInput" name="userIdInput" placeholder="Enter User ID">
+         </div>
+         <button id="cloneButton" disabled>Clone Selected Trackers</button>
+         <div id="cloneMessageArea" class="message-area info"></div>
+     </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const hashInput = document.getElementById('hashInput');
+            const fetchSubpaasListButton = document.getElementById('fetchSubpaasListButton');
+            const mainMessageArea = document.getElementById('mainMessageArea'); // For SubPAAS fetch and session creation messages
+            const subpaasListArea = document.getElementById('subpaasListArea');
+            const trackerListArea = document.getElementById('trackerListArea'); // For Tracker list
+            const trackerMessageArea = document.getElementById('trackerMessageArea'); // For Tracker fetch messages
+            const userIdInput = document.getElementById('userIdInput'); // New: User ID input
+            const cloneButton = document.getElementById('cloneButton'); // New: Clone button
+            const cloneMessageArea = document.getElementById('cloneMessageArea'); // New: Clone message area
+
+
+            let subpaasSelectElement = null; // To hold the reference to the SubPAAS select element
+            let currentSubpaasHash = null; // To store the hash obtained from session creation
+            let trackerSelectElement = null; // New: To hold the reference to the Tracker select element
+
+
+            // Function to display messages in a specific area
+            function displayMessage(areaElement, message, type = 'info') {
+                areaElement.textContent = message;
+                areaElement.className = 'message-area'; // Reset classes
+                areaElement.classList.add(type); // Add type class (info, success, error, loading)
+            }
+
+            // Function to clear all dynamic content/messages and reset state
+            function clearAllDynamicContent() {
+                 subpaasListArea.innerHTML = '';
+                 trackerListArea.innerHTML = '';
+                 subpaasSelectElement = null;
+                 trackerSelectElement = null; // Clear tracker select reference
+                 currentSubpaasHash = null;
+                 userIdInput.value = ''; // Clear user ID input
+                 cloneButton.disabled = true; // Disable clone button
+
+                 displayMessage(mainMessageArea, '', 'info');
+                 displayMessage(trackerMessageArea, '', 'info');
+                 displayMessage(cloneMessageArea, '', 'info'); // Clear clone message area
+            }
+
+
+            // --- Step 1: Fetch SubPAAS List ---
+            fetchSubpaasListButton.addEventListener('click', async () => {
+                const primaryHash = hashInput.value.trim();
+
+                clearAllDynamicContent(); // Start fresh
+
+                if (!primaryHash) {
+                    displayMessage(mainMessageArea, 'Please enter your primary hash.', 'error');
+                    return;
+                }
+
+                displayMessage(mainMessageArea, 'Loading SubPAAS list...', 'loading');
+
+                const subpaasListApiUrl = 'https://api.eu.navixy.com/v2/panel/subpaas/list';
+
+                try {
+                    const response = await fetch(subpaasListApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ hash: primaryHash })
+                    });
+
+                    if (!response.ok) {
+                        let errorDetails = `HTTP error fetching SubPAAS list! Status: ${response.status}`;
+                         try {
+                             const errorData = await response.json();
+                              if (errorData && errorData.error) {
+                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
+                              } else {
+                                errorDetails += ` - Response: ${JSON.stringify(errorData)}`;
+                              }
+                         } catch (jsonError) { /* ignore */ } // Ignore JSON error if response wasn't JSON
+                        throw new Error(errorDetails);
+                    }
+
+                    const data = await response.json();
+
+                    // ASSUMPTION: Successful SubPAAS list response is a JSON object with a 'list' array property
+                    if (data && Array.isArray(data.list)) {
+                        if (data.list.length > 0) {
+                            subpaasSelectElement = document.createElement('select');
+                            subpaasSelectElement.id = 'subpaasSelect'; // Give it an ID
+                            subpaasSelectElement.setAttribute('size', data.list.length > 10 ? 10 : data.list.length + 1);
+
+
+                            // Add a default option
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = "";
+                            defaultOption.textContent = "-- Select a SubPAAS --";
+                            defaultOption.disabled = true;
+                            defaultOption.selected = true;
+                            subpaasSelectElement.appendChild(defaultOption);
+
+                            data.list.forEach(subpaas => {
+                                const option = document.createElement('option');
+                                // ASSUMPTION: SubPAAS object has 'id' and 'name' or 'title' properties
+                                option.value = subpaas.subpaas_id; // Use SubPAAS ID as value
+                                option.textContent = `ID: ${subpaas.subpaas_id}, Name: ${subpaas.name || subpaas.title || 'N/A'}`; // Display ID and Name/Title
+                                subpaasSelectElement.appendChild(option);
+                            });
+
+                            subpaasListArea.appendChild(subpaasSelectElement);
+                            displayMessage(mainMessageArea, `Found ${data.list.length} SubPAAS. Please select one.`, 'success');
+
+                             // --- Add Event Listener to the SubPAAS Select ---
+                             subpaasSelectElement.addEventListener('change', handleSubpaasSelection);
+
+                        } else {
+                            subpaasListArea.textContent = 'No SubPAAS found for this primary hash.';
+                            subpaasSelectElement = null;
+                             displayMessage(mainMessageArea, 'No SubPAAS found for this primary hash.', 'info');
+                        }
+                    } else if (data && data.error) {
+                         // Handle API-level errors if the response structure includes an 'error' property
+                         displayMessage(mainMessageArea, `API returned an error fetching SubPAAS list: ${data.error.message || data.error}`, 'error');
+                         console.error('Navixy API Error (SubPAAS List):', data.error);
+                         subpaasSelectElement = null;
+                    }
+                    else {
+                        // Handle unexpected successful response structures
+                        console.error('Unexpected SubPAAS List API response structure:', data);
+                        displayMessage(mainMessageArea, `Received SubPAAS list data, but structure was unexpected. Check console.`, 'error');
+                        subpaasSelectElement = null;
+                    }
+
+                } catch (error) {
+                    console.error('Fetch SubPAAS list error:', error);
+                    displayMessage(mainMessageArea, `Error fetching SubPAAS list: ${error.message}`, 'error');
+                     subpaasSelectElement = null;
+                }
+            });
+
+            // --- Step 2: Create SubPAAS Session & Step 3: Fetch Trackers ---
+            async function handleSubpaasSelection() {
+                const selectedSubpaasId = this.value;
+                const primaryHash = hashInput.value.trim();
+
+                // Clear previous tracker list/messages and disable clone button
+                trackerListArea.innerHTML = '';
+                trackerSelectElement = null; // Clear tracker select reference
+                currentSubpaasHash = null; // Clear potentially old subpaas hash
+                cloneButton.disabled = true; // Disable clone button
+                displayMessage(trackerMessageArea, '', 'info'); // Clear tracker message area
+                displayMessage(cloneMessageArea, '', 'info'); // Clear clone message area
+
+
+                if (!selectedSubpaasId) {
+                     displayMessage(mainMessageArea, 'Select a SubPAAS to create session and load trackers.', 'info');
+                    return;
+                }
+
+                 if (!primaryHash) {
+                    displayMessage(mainMessageArea, 'Primary hash is missing. Please re-enter hash and fetch SubPAAS list.', 'error');
+                    return;
+                }
+
+                displayMessage(mainMessageArea, `Creating session for SubPAAS ID ${selectedSubpaasId}...`, 'loading');
+
+                const sessionCreateApiUrl = 'https://api.eu.navixy.com/v2/panel/subpaas/session/create';
+
+                try {
+                    const response = await fetch(sessionCreateApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            hash: primaryHash, // Use the primary hash
+                            subpaas_id: parseInt(selectedSubpaasId, 10) // Ensure ID is an integer
+                        })
+                    });
+
+                    if (!response.ok) {
+                        let errorDetails = `HTTP error creating SubPAAS session! Status: ${response.status}`;
+                         try {
+                             const errorData = await response.json();
+                              if (errorData && errorData.error) {
+                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
+                              } else {
+                                errorDetails += ` - Response: ${JSON.stringify(errorData)}`;
+                              }
+                         } catch (jsonError) { /* ignore */ }
+                        throw new Error(errorDetails);
+                    }
+
+                    const data = await response.json();
+
+                    // ASSUMPTION: Successful session create returns a JSON object with the new hash in a property (e.g., 'hash')
+                     // *** VERIFY YOUR API DOCS FOR THE EXACT PROPERTY NAME ***
+                    if (data && data.hash) { // Assuming the new hash is in data.hash
+                         currentSubpaasHash = data.hash; // Store the obtained subpaas hash
+                         displayMessage(mainMessageArea, `Session created for SubPAAS ID ${selectedSubpaasId}. Now loading trackers...`, 'success');
+
+                         // --- Now proceed to Step 3: Fetch Trackers using the new subpaas hash ---
+                         fetchTrackers(currentSubpaasHash); // Call the next step
+
+                    } else if (data && data.error) {
+                        displayMessage(mainMessageArea, `API returned an error creating session: ${data.error.message || data.error}`, 'error');
+                        console.error('Navixy API Error (Session Create):', data.error);
+                    }
+                    else {
+                        console.error('Unexpected Session Create API response structure:', data);
+                        displayMessage(mainMessageArea, `Received session data, but hash property was not found. Check console.`, 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Fetch Session Create error:', error);
+                    displayMessage(mainMessageArea, `Error creating SubPAAS session: ${error.message}`, 'error');
+                     // Clear tracker list area if session creation fails
+                    trackerListArea.innerHTML = '';
+                    trackerSelectElement = null; // Clear tracker select reference
+                    cloneButton.disabled = true; // Disable clone button
+                    displayMessage(trackerMessageArea, '', 'info'); // Clear tracker message area
+                }
+            }
+
+            // --- Step 3: Fetch Trackers using SubPAAS Hash ---
+            async function fetchTrackers(subpaasHash) {
+                trackerListArea.innerHTML = ''; // Clear previous tracker list
+                trackerSelectElement = null; // Clear reference before potential new one
+                 cloneButton.disabled = true; // Disable clone button until trackers are loaded
+
+                displayMessage(trackerMessageArea, `Loading trackers using SubPAAS hash...`, 'loading'); // Use tracker message area
+
+                if (!subpaasHash) {
+                    displayMessage(trackerMessageArea, 'SubPAAS hash is missing. Session creation might have failed.', 'error');
+                    return;
+                }
+
+                const trackerApiUrl = 'https://api.eu.navixy.com/v2/panel/tracker/list';
+
+                try {
+                    const response = await fetch(trackerApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ hash: subpaasHash }) // Use the SUBPAAS HASH here
+                    });
+
+                    if (!response.ok) {
+                         let errorDetails = `HTTP error fetching trackers! Status: ${response.status}`;
+                         try {
+                             const errorData = await response.json();
+                              if (errorData && errorData.error) {
+                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
+                              } else {
+                                errorDetails += ` - Response: ${JSON.stringify(errorData)}`;
+                              }
+                         } catch (jsonError) { /* ignore */ }
+                        throw new Error(errorDetails);
+                    }
+
+                    const data = await response.json();
+
+                    // ASSUMPTION: Successful Tracker response is JSON with a 'list' array property
+                    if (data && Array.isArray(data.list)) {
+                        if (data.list.length > 0) {
+                            trackerSelectElement = document.createElement('select'); // Create the select element
+                            trackerSelectElement.setAttribute('multiple', 'multiple'); // Make it selectable list
+                            trackerSelectElement.setAttribute('size', data.list.length > 15 ? 15 : data.list.length + 1); // Show multiple items
+
+                            data.list.forEach(tracker => {
+                                const option = document.createElement('option');
+                                // ASSUMPTION: Tracker object has 'id' and 'name' properties
+                                option.value = tracker.id;
+                                option.textContent = `ID: ${tracker.id}, Name: ${tracker.label || 'N/A'}`;
+                                trackerSelectElement.appendChild(option);
+                            });
+
+                            trackerListArea.appendChild(trackerSelectElement); // Add to the DOM
+                            displayMessage(trackerMessageArea, `Found ${data.list.length} tracker(s) for this SubPAAS.`, 'success');
+
+                             // Trackers loaded successfully, enable clone button
+                             cloneButton.disabled = false;
+
+
+                        } else {
+                            trackerListArea.textContent = 'No trackers found for this SubPAAS hash.';
+                            displayMessage(trackerMessageArea, 'No trackers found for this SubPAAS hash.', 'info');
+                             trackerSelectElement = null; // No trackers, no select element reference
+                             cloneButton.disabled = true; // No trackers to clone
+                        }
+                    } else if (data && data.error) {
+                         displayMessage(trackerMessageArea, `API returned an error fetching trackers: ${data.error.message || data.error}`, 'error');
+                         console.error('Navixy API Error (Trackers):', data.error);
+                         trackerSelectElement = null;
+                         cloneButton.disabled = true;
+                    }
+                    else {
+                         console.error('Unexpected Tracker API response structure:', data);
+                         displayMessage(trackerMessageArea, `Received tracker data, but structure was unexpected. Check console.`, 'error');
+                         trackerSelectElement = null;
+                         cloneButton.disabled = true;
+                    }
+
+                } catch (error) {
+                    console.error('Fetch tracker error:', error);
+                    displayMessage(trackerMessageArea, `Error fetching tracker data: ${error.message}`, 'error');
+                    trackerListArea.innerHTML = ''; // Clear list area on error
+                    trackerSelectElement = null;
+                    cloneButton.disabled = true;
+                }
+            }
+
+            // --- Step 4: Clone Selected Trackers ---
+            cloneButton.addEventListener('click', async () => {
+                const primaryHash = hashInput.value.trim(); // Use the original primary hash as requested
+                const userIdString = userIdInput.value.trim();
+                const userId = parseInt(userIdString, 10); // Convert User ID to integer
+
+                displayMessage(cloneMessageArea, '', 'info'); // Clear previous clone messages
+
+                if (!primaryHash) {
+                    displayMessage(cloneMessageArea, 'Primary hash is missing. Cannot perform clone.', 'error');
+                    return;
+                }
+
+                 if (isNaN(userId) || userIdString === '') {
+                     displayMessage(cloneMessageArea, 'Please enter a valid User ID.', 'orange'); // Use orange for validation warnings
+                     userIdInput.focus(); // Put focus back on the input
+                     return;
+                 }
+
+
+                if (!trackerSelectElement) {
+                     displayMessage(cloneMessageArea, 'Tracker list not loaded or empty.', 'error');
+                     return;
+                }
+
+                // Get selected tracker IDs from the multiple-select list
+                const selectedTrackerIds = [];
+                for (const option of trackerSelectElement.options) {
+                    if (option.selected) {
+                         const trackerId = parseInt(option.value, 10);
+                         if (!isNaN(trackerId)) { // Basic validation
+                             selectedTrackerIds.push(trackerId);
+                         } else {
+                             console.warn(`Skipping invalid selected tracker ID value: ${option.value}`);
+                         }
+                    }
+                }
+
+                if (selectedTrackerIds.length === 0) {
+                    displayMessage(cloneMessageArea, 'Please select at least one tracker to clone.', 'orange');
+                    return;
+                }
+
+                displayMessage(cloneMessageArea, `Cloning ${selectedTrackerIds.length} tracker(s) to User ID ${userId}...`, 'loading');
+
+                const cloneApiUrl = 'https://api.eu.navixy.com/v2/panel/tracker/batch_clone';
+
+                try {
+                    const response = await fetch(cloneApiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                         // API expects tracker_ids as an array of numbers
+                        body: JSON.stringify({
+                            hash: primaryHash, // Use the ORIGINAL primary hash for cloning
+                            user_id: userId,    // Use the entered user ID
+                            tracker_ids: selectedTrackerIds, // Pass the array of selected IDs
+                            ignore_existing: true // As requested
+                        })
+                    });
+
+                     if (!response.ok) {
+                         let errorDetails = `HTTP error during cloning! Status: ${response.status}`;
+                         try {
+                             const errorData = await response.json();
+                              if (errorData && errorData.error) {
+                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
+                              } else {
+                                errorDetails += ` - Response: ${JSON.stringify(errorData)}`;
+                              }
+                         } catch (jsonError) { /* ignore */ }
+                         throw new Error(errorDetails);
+                     }
+
+                    const data = await response.json();
+
+                    // ASSUMPTION: Successful batch_clone might return a success status or details.
+                    // Check your API documentation for the exact success response structure.
+                    if (data && data.success) { // Common pattern for success
+                         displayMessage(cloneMessageArea, `Successfully cloned ${selectedTrackerIds.length} tracker(s) to User ID ${userId}.`, 'success');
+                         console.log('Batch Clone Success:', data);
+                     } else if (data && data.error) {
+                        displayMessage(cloneMessageArea, `API Error during cloning: ${data.error.message || data.error}`, 'error');
+                        console.error('Navixy API Clone Error:', data.error);
+                     }
+                     else {
+                         console.error('Unexpected successful clone API response structure:', data);
+                         displayMessage(cloneMessageArea, `Cloning request sent, but response structure was unexpected. Check console.`, 'orange');
+                     }
+
+
+                } catch (error) {
+                    console.error('Clone fetch error:', error);
+                    displayMessage(cloneMessageArea, `Error during cloning: ${error.message}`, 'error');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
