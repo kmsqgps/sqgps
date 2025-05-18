@@ -14,3 +14,7 @@ in order to allow the file to run on the system, and:
 to run it. 
 
 Within the script, we have the hostname as "localhost" however if you wish to use another option, please edit that within the file. 
+
+
+## Navixy SubPaaS Clone Tool
+The JavaScript code here is a simple tool created to assist with cloning devices across Admin Panels. This is based on the Panel hierarchy allowing for cloning between resellers and others, as long as they're underneath the same master panel. You will first need to provide your Admin Panel hash (https://developers.navixy.com/docs/navixy-api/panel-api/resources/account#auth) and follow the on-screen prompts. The destination user_id is a manual input. This will not allow for devices to be cloned multiple times to the same user. 
