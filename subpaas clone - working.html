@@ -3,807 +3,514 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navixy Clone Tool</title>
+    <title>Navixy Tracker Cloning</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: Arial, sans-serif;
             margin: 20px;
-        }
-        .section {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .section h2 {
-            margin-top: 0;
+            background-color: #f4f4f4;
             color: #333;
         }
-         .section label {
-            display: inline-block;
-            margin-bottom: 5px;
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 25px;
+        }
+
+        div {
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 8px;
             font-weight: bold;
-         }
-         .section input[type="text"],
-         .section input[type="number"],
-         .section button {
-            padding: 8px;
+        }
+
+        input[type="text"], input[type="password"], select {
+            width: calc(100% - 22px);
+            padding: 10px;
             margin-top: 5px;
-            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            box-sizing: border-box;
-             display: inline-block;
-             vertical-align: top;
-             margin-right: 10px;
-         }
-         .section input[type="radio"] {
-             margin-right: 5px;
-         }
+            font-size: 16px;
+        }
 
-         #adminHashInput {
-             width: calc(100% - 150px); /* Adjust width for input */
-             min-width: 200px;
-         }
+        input[type="radio"] {
+            margin-right: 5px;
+            /* Added explicit styling for better visibility on some browsers */
+            -webkit-appearance: radio;
+            -moz-appearance: radio;
+            appearance: radio;
+        }
 
-         #manualTrackerIds {
-            width: 100%;
-            height: 100px;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
+        label {
+            margin-right: 20px;
+            font-weight: normal;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 18px;
+            border: none;
             border-radius: 4px;
-            box-sizing: border-box;
-            resize: vertical;
-         }
-
-
-        .message-area {
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
             margin-top: 10px;
-            padding: 8px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #trackerList {
+            border: 1px solid #ddd;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 10px;
             border-radius: 4px;
-            min-height: 1em;
-            border: 1px solid transparent;
+            background-color: #f9f9f9;
         }
-        .message-area.info { color: black; border-color: gray; background-color: #f0f0f0; }
-        .message-area.success { color: green; border-color: green; background-color: #e6ffe6;}
-        .message-area.error { color: red; border-color: red; background-color: #ffe6e6;}
-        .message-area.loading { color: #007bff; border-color: #007bff; background-color: #e6f3ff;}
-         .message-area.orange { color: orange; border-color: orange; background-color: #fff2e6;}
 
+        #trackerList label {
+            display: block;
+            margin-bottom: 5px;
+            padding: 5px 0;
+        }
 
-        select {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
+        .message {
+            margin-top: 20px;
+            padding: 10px;
             border-radius: 4px;
-            box-sizing: border-box;
-        }
-        select[multiple] {
-             min-height: 150px;
-        }
-
-        /* Hide sections initially or based on JS */
-        #adminHashSection,
-        #inputMethodSelectionSection,
-        #preselectFlowSection,
-        #manualInputSection,
-         #cloneSection
-         {
+            font-weight: bold;
             display: none;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Navixy Tracker Management</h1>
 
-    <h1>Navixy Tracker Cloning Tool</h1>
-
-    <div id="serverSelectionSection" class="section">
-        <h2>Select Server</h2>
-        <label><input type="radio" name="server" value="us"> US Server</label>
-        <label><input type="radio" name="server" value="eu"> EU Server</label>
-        <div id="serverMessageArea" class="message-area info"></div>
-    </div>
-
-    <div id="adminHashSection" class="section">
-         <h2>Admin Panel Hash</h2>
-         <div>
-            <label for="adminHashInput">Enter your Admin Panel Hash:</label><br>
-            <input type="password" id="adminHashInput" name="adminHashInput" size="50" placeholder="Enter admin hash here">
-         </div>
-          <div id="adminHashMessageArea" class="message-area info"></div>
-    </div>
-
-
-    <div id="inputMethodSelectionSection" class="section">
-        <h2>Select Tracker Input Method</h2>
-        <label><input type="radio" name="inputMethod" value="preselect"> Pre-select from SubPAAS List</label>
-        <label><input type="radio" name="inputMethod" value="manual"> Manual Object ID Input</label>
-        <div id="inputMethodMessageArea" class="message-area info"></div>
-    </div>
-
-    <div id="preselectFlowSection">
-        <div id="subpaasListSection" class="section">
-            <h2>Available SubPAAS (Select one)</h2>
-            <button id="fetchSubpaasListButton">Fetch SubPAAS List</button>
-            <div id="subpaasMessageArea" class="message-area info"></div>
-            <div id="subpaasListArea">
-                </div>
+        <div id="serverSelection">
+            <p>Select your server:</p>
+            <label>
+                <input type="radio" name="server" value="EU" id="euServer"> EU Server
+            </label>
+            <label>
+                <input type="radio" name="server" value="US" id="usServer"> US Server
+            </label>
         </div>
 
-        <div id="trackerListSection" class="section">
-            <h2>Trackers for Selected SubPAAS (Select one or more to clone)</h2>
-            <div id="trackerListArea">
-                </div>
-             <div id="trackerMessageArea" class="message-area info"></div>
+        <div id="adminHashSection" style="display: none;">
+            <p>Enter Admin Panel Hash:</p>
+            <input type="password" id="adminHash" placeholder="Admin Panel Hash">
+            <button id="submitAdminHash">Submit Hash</button>
         </div>
+
+        <div id="trackerChoiceSection" style="display: none;">
+            <p>How do you want to select trackers?</p>
+            <label>
+                <input type="radio" name="trackerChoice" value="preselect" id="preselectTrackers"> Pre-selected list (SubPAAS)
+            </label>
+            <label>
+                <input type="radio" name="trackerChoice" value="manual" id="manualInputTrackers"> Manually input object IDs
+            </label>
+            <label>
+                <input type="radio" name="trackerChoice" value="onepanel" id="onePanelTrackers"> Trackers for one panel
+            </label>
+        </div>
+
+        <div id="subpaasSelectionSection" style="display: none;">
+            <p>Select a SubPAAS:</p>
+            <select id="subpaasList">
+                <option value="">Loading...</option>
+            </select>
+            <button id="selectSubpaas">Select SubPAAS</button>
+        </div>
+
+        <div id="manualInputSection" style="display: none;">
+            <p>Enter Object IDs (comma separated):</p>
+            <input type="text" id="manualObjectIds" placeholder="e.g., 123,456,789">
+        </div>
+
+        <div id="trackerListSection" style="display: none;">
+            <p>Available Trackers:</p>
+            <div id="trackerList"></div>
+            <button id="proceedWithTrackers" style="display: none;">Proceed with selected trackers</button>
+        </div>
+
+        <div id="cloneSection" style="display: none;">
+            <p>Enter User ID to clone trackers to:</p>
+            <input type="text" id="cloneUserId" placeholder="User ID">
+            <button id="cloneTrackers">Clone Trackers</button>
+        </div>
+
+        <div id="message" class="message" style="display: none;"></div>
     </div>
-
-    <div id="manualInputSection" class="section">
-        <h2>Manual Object ID Input</h2>
-        <label for="manualTrackerIds">Enter Tracker Object IDs (comma-separated):</label><br>
-        <textarea id="manualTrackerIds" placeholder="e.g., 123, 456, 789"></textarea>
-        <div id="manualInputMessageArea" class="message-area info"></div>
-    </div>
-
-
-     <div id="cloneSection" class="section">
-         <h2>Clone Trackers to User</h2>
-         <div>
-             <label for="userIdInput">Target User ID:</label>
-             <input type="number" id="userIdInput" name="userIdInput" placeholder="Enter User ID">
-         </div>
-         <button id="cloneButton" disabled>Clone Selected Trackers</button>
-         <div id="cloneMessageArea" class="message-area info"></div>
-     </div>
-
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- UI Element References ---
-            const serverRadios = document.querySelectorAll('input[name="server"]');
-            const inputMethodRadios = document.querySelectorAll('input[name="inputMethod"]');
-            const serverSelectionSection = document.getElementById('serverSelectionSection');
-            const inputMethodSelectionSection = document.getElementById('inputMethodSelectionSection');
-            const adminHashSection = document.getElementById('adminHashSection');
-            const adminHashInput = document.getElementById('adminHashInput');
-            const serverMessageArea = document.getElementById('serverMessageArea');
-            const inputMethodMessageArea = document.getElementById('inputMethodMessageArea');
-            const adminHashMessageArea = document.getElementById('adminHashMessageArea');
+        let BASE_URL = '';
+        let ADMIN_HASH = '';
+        let SUBPAAS_HASH = '';
+        let SELECTED_TRACKER_IDS = []; // This should always reflect only currently selected IDs
 
-            const preselectFlowSection = document.getElementById('preselectFlowSection');
-            const fetchSubpaasListButton = document.getElementById('fetchSubpaasListButton');
-            const subpaasListArea = document.getElementById('subpaasListArea');
-            const subpaasMessageArea = document.getElementById('subpaasMessageArea');
-            const trackerListArea = document.getElementById('trackerListArea');
-            const trackerMessageArea = document.getElementById('trackerMessageArea');
+        const serverSelection = document.getElementById('serverSelection');
+        const adminHashSection = document.getElementById('adminHashSection');
+        const adminHashInput = document.getElementById('adminHash');
+        const submitAdminHashBtn = document.getElementById('submitAdminHash');
+        const trackerChoiceSection = document.getElementById('trackerChoiceSection');
+        const preselectTrackersRadio = document.getElementById('preselectTrackers');
+        const manualInputTrackersRadio = document.getElementById('manualInputTrackers');
+        const onePanelTrackersRadio = document.getElementById('onePanelTrackers');
+        const subpaasSelectionSection = document.getElementById('subpaasSelectionSection');
+        const subpaasListSelect = document.getElementById('subpaasList');
+        const selectSubpaasBtn = document.getElementById('selectSubpaas');
+        const manualInputSection = document.getElementById('manualInputSection');
+        const manualObjectIdsInput = document.getElementById('manualObjectIds');
+        const trackerListSection = document.getElementById('trackerListSection');
+        const trackerListDiv = document.getElementById('trackerList');
+        const proceedWithTrackersBtn = document.getElementById('proceedWithTrackers');
+        const cloneSection = document.getElementById('cloneSection');
+        const cloneUserIdInput = document.getElementById('cloneUserId');
+        const cloneTrackersBtn = document.getElementById('cloneTrackers');
+        const messageDiv = document.getElementById('message');
 
-            const manualInputSection = document.getElementById('manualInputSection');
-            const manualTrackerIdsTextarea = document.getElementById('manualTrackerIds');
+        // --- Helper Functions ---
+        function showMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            // setTimeout(() => {
+            //     messageDiv.style.display = 'none';
+            // }, 5000);
+        }
 
-            const cloneSection = document.getElementById('cloneSection');
-            const userIdInput = document.getElementById('userIdInput');
-            const cloneButton = document.getElementById('cloneButton');
-            const cloneMessageArea = document.getElementById('cloneMessageArea');
+        function resetUI() {
+            // Hide all dynamic sections
+            adminHashSection.style.display = 'none';
+            trackerChoiceSection.style.display = 'none';
+            subpaasSelectionSection.style.display = 'none';
+            manualInputSection.style.display = 'none';
+            trackerListSection.style.display = 'none';
+            cloneSection.style.display = 'none';
+            messageDiv.style.display = 'none';
 
+            // Clear input fields and lists
+            trackerListDiv.innerHTML = '';
+            adminHashInput.value = '';
+            manualObjectIdsInput.value = '';
+            cloneUserIdInput.value = '';
+            subpaasListSelect.innerHTML = '<option value="">Loading...</option>'; // Reset subpaas dropdown
 
-            // --- State Variables ---
-            let baseUrl = '';
-            let inputMethod = '';
-            let subpaasSelectElement = null;
-            let currentSubpaasHash = null;
-            let trackerSelectElement = null;
+            // Reset internal state variables
+            SELECTED_TRACKER_IDS = [];
+            SUBPAAS_HASH = '';
+            proceedWithTrackersBtn.style.display = 'none';
 
+            // Uncheck all radio buttons for tracker choice
+            document.querySelectorAll('input[name="trackerChoice"]').forEach(radio => {
+                radio.checked = false;
+            });
+            // Server radios remain checked as they define the BASE_URL
+        }
 
-            // --- Helper Functions ---
-            function displayMessage(areaElement, message, type = 'info') {
-                areaElement.textContent = message;
-                areaElement.className = 'message-area';
-                areaElement.classList.add(type);
+        async function fetchData(url, payload, hashType = 'admin') {
+            let currentHash = '';
+            if (hashType === 'admin') {
+                currentHash = ADMIN_HASH;
+            } else if (hashType === 'subpaas') {
+                currentHash = SUBPAAS_HASH;
             }
 
-            // Clear content related to input method and cloning
-            function clearMethodSpecificContent() {
-                subpaasListArea.innerHTML = '';
-                trackerListArea.innerHTML = '';
-                manualTrackerIdsTextarea.value = '';
-                subpaasSelectElement = null;
-                trackerSelectElement = null;
-                currentSubpaasHash = null; // Clear the SubPAAS hash
-
-                // Hide method specific sections
-                preselectFlowSection.style.display = 'none';
-                manualInputSection.style.display = 'none';
-                cloneSection.style.display = 'none'; // Hide clone section
-
-                displayMessage(subpaasMessageArea, '', 'info');
-                displayMessage(trackerMessageArea, '', 'info');
-                displayMessage(manualInputMessageArea, '', 'info');
-                 displayMessage(cloneMessageArea, '', 'info');
+            // Only enforce hash presence if it's not a 'no_hash' call
+            if (!currentHash && hashType !== 'no_hash') {
+                showMessage('Authentication hash is missing. Please provide it.', 'error');
+                return null;
             }
 
-            // Reset the tool back to server selection
-            function resetTool() {
-                 baseUrl = '';
-                 adminHashInput.value = ''; // Clear the hash input itself
-                 adminHashSection.style.display = 'none';
-                 inputMethodSelectionSection.style.display = 'none';
-                 clearMethodSpecificContent(); // This also clears method radios state and subsequent sections
-
-                 // Reset server radios
-                 serverRadios.forEach(radio => radio.checked = false);
-
-                 displayMessage(serverMessageArea, 'Select a server to begin.', 'info');
-                 displayMessage(adminHashMessageArea, '', 'info');
-                 updateCloneButtonState(); // Ensure button is disabled
-            }
-
-
-            // Check if the clone button should be enabled
-            function updateCloneButtonState() {
-                 const adminHash = adminHashInput.value.trim();
-                 const userIdString = userIdInput.value.trim();
-                 const userIdIsValid = userIdString !== '' && !isNaN(parseInt(userIdString, 10));
-
-                 let trackersAvailable = false;
-                 if (inputMethod === 'preselect') {
-                     // Trackers available if the select element exists and has options other than the default
-                     trackersAvailable = trackerSelectElement !== null && trackerSelectElement.options.length > 1;
-                 } else if (inputMethod === 'manual') {
-                     // Trackers available if the manual input has comma-separated values that can be parsed
-                     const manualIds = manualTrackerIdsTextarea.value.trim();
-                      if (manualIds !== '') {
-                          const parsedIds = manualIds.split(',')
-                             .map(id => id.trim())
-                             .filter(id => id !== '')
-                             .map(id => parseInt(id, 10))
-                             .filter(id => !isNaN(id));
-                          trackersAvailable = parsedIds.length > 0;
-                      } else {
-                          trackersAvailable = false;
-                      }
-                 }
-
-                 // Button is enabled if base URL, admin hash, input method selected, user ID is valid, and trackers are available
-                 cloneButton.disabled = !(baseUrl && adminHash && inputMethod && userIdIsValid && trackersAvailable);
-
-                 // Show clone section once method is chosen and admin hash is present
-                 if (inputMethod && adminHash) {
-                     cloneSection.style.display = 'block';
-                 } else {
-                     cloneSection.style.display = 'none';
-                 }
-            }
-
-
-            // --- Event Listeners ---
-
-            // Server Selection Change
-            serverRadios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    baseUrl = `https://api.${radio.value}.navixy.com/v2`;
-                    displayMessage(serverMessageArea, `Server set to ${radio.value.toUpperCase()}.`, 'success');
-
-                    // Show the Admin Hash section
-                    adminHashSection.style.display = 'block';
-
-                    // Clear subsequent sections and state (including admin hash input value)
-                    adminHashInput.value = ''; // Clear the hash input itself for a clean start on this step
-                    clearMethodSpecificContent(); // This also clears input method radios state and below
-                    inputMethodSelectionSection.style.display = 'none'; // Explicitly hide input method selection initially
-
-                     // Manually ensure input method radios are unchecked when hash section appears
-                     inputMethodRadios.forEach(methodRadio => methodRadio.checked = false);
-                     inputMethod = ''; // Ensure state is also reset
-
-
-                    updateCloneButtonState(); // Update button state
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ hash: currentHash, ...payload }),
                 });
-            });
 
-            // Admin Hash Input Change (auto-proceed)
-            adminHashInput.addEventListener('input', () => {
-                 const adminHash = adminHashInput.value.trim();
-
-                 // Clear input method specific sections and state when hash changes
-                 clearMethodSpecificContent(); // This clears content areas and hides method/clone sections
-                 inputMethodSelectionSection.style.display = 'none'; // Explicitly hide input method selection temporarily
-
-                 if (adminHash) {
-                     displayMessage(adminHashMessageArea, 'Admin Hash entered.', 'success');
-                     inputMethodSelectionSection.style.display = 'block'; // Show input method selection
-
-                     // Manually ensure input method radios are unchecked when they appear
-                     inputMethodRadios.forEach(methodRadio => methodRadio.checked = false);
-                      inputMethod = ''; // Ensure state is also reset
-
-                     updateCloneButtonState(); // Update button state
-                 } else {
-                     displayMessage(adminHashMessageArea, 'Please enter Admin Hash.', 'info');
-                      // If hash is cleared, hide input method section again
-                      inputMethodSelectionSection.style.display = 'none';
-                      // Also hide clone section explicitly if hash becomes empty
-                      cloneSection.style.display = 'none';
-                     updateCloneButtonState();
-                 }
-            });
-
-
-            // Input Method Selection Change
-            inputMethodRadios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    // This listener only fires *after* the browser successfully changes the radio state
-                    inputMethod = radio.value;
-                    // Do NOT call clearMethodSpecificContent() here, it would clear the method selection itself!
-                    // Instead, manually hide/clear the parts specific to the *other* method.
-
-                    // Hide/clear content of the OTHER method's section
-                     if (inputMethod === 'preselect') {
-                         manualInputSection.style.display = 'none';
-                         manualTrackerIdsTextarea.value = ''; // Clear manual input
-                         displayMessage(manualInputMessageArea, '', 'info');
-                     } else if (inputMethod === 'manual') {
-                         preselectFlowSection.style.display = 'none';
-                         // Clear preselect-specific elements and state
-                         subpaasListArea.innerHTML = '';
-                         trackerListArea.innerHTML = '';
-                         subpaasSelectElement = null;
-                         trackerSelectElement = null;
-                         currentSubpaasHash = null; // Clear subpaas hash state
-                         displayMessage(subpaasMessageArea, '', 'info');
-                         displayMessage(trackerMessageArea, '', 'info');
-                     }
-
-
-                    if (inputMethod === 'preselect') {
-                        preselectFlowSection.style.display = 'block';
-                        displayMessage(inputMethodMessageArea, 'Using pre-select method. Click "Fetch SubPAAS List".', 'info');
-                         fetchSubpaasListButton.style.display = 'inline-block';
-                    } else if (inputMethod === 'manual') {
-                        manualInputSection.style.display = 'block';
-                        displayMessage(inputMethodMessageArea, 'Using manual input method. Enter Object IDs and Target User ID.', 'info');
-                         fetchSubpaasListButton.style.display = 'none';
-                    }
-                     updateCloneButtonState(); // Update button state now that method is selected and section is visible
-                });
-            });
-
-             // Listen for changes in User ID and Manual Input to potentially enable clone button
-             userIdInput.addEventListener('input', updateCloneButtonState);
-             manualTrackerIdsTextarea.addEventListener('input', updateCloneButtonState);
-
-
-            // --- Step 1: Fetch SubPAAS List (only in preselect flow) ---
-            fetchSubpaasListButton.addEventListener('click', async () => {
-                const adminHash = adminHashInput.value.trim();
-
-                // Clear dynamic content within the preselect flow areas
-                 subpaasListArea.innerHTML = '';
-                 trackerListArea.innerHTML = '';
-                 subpaasSelectElement = null;
-                 trackerSelectElement = null;
-                 currentSubpaasHash = null;
-                 cloneButton.disabled = true; // Disable clone button
-
-                 displayMessage(subpaasMessageArea, '', 'info');
-                 displayMessage(trackerMessageArea, '', 'info');
-                 displayMessage(cloneMessageArea, '', 'info');
-
-
-                if (!baseUrl) {
-                    displayMessage(serverMessageArea, 'Server selection was lost. Please select a server.', 'orange');
-                    resetTool();
-                    return;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    // Log the full error for debugging
+                    console.error(`API response error for ${url}:`, errorData);
+                    throw new Error(errorData.message || `Network response was not ok: ${response.status} - ${errorData.status.description}`);
                 }
 
-                if (!adminHash) {
-                    displayMessage(adminHashMessageArea, 'Admin Hash is missing. Please enter it.', 'error');
-                    // If admin hash is somehow lost here, reset the whole flow
-                    resetTool(); // Maybe too harsh? Or just clear method-specific and hash input
-                    // Let's just ensure subsequent steps are blocked.
-                    clearMethodSpecificContent(); // This will hide the preselect section
-                     displayMessage(adminHashMessageArea, 'Admin Hash is missing.', 'error'); // Re-display hash error
-                    return;
+                return await response.json();
+            } catch (error) {
+                showMessage(`API Error: ${error.message}`, 'error');
+                console.error('API Error:', error);
+                return null;
+            }
+        }
+
+        // --- Event Listeners ---
+        serverSelection.addEventListener('change', (event) => {
+            if (event.target.name === 'server') {
+                resetUI(); // Reset UI when server changes
+                if (event.target.value === 'EU') {
+                    BASE_URL = 'https://api.eu.navixy.com/v2/';
+                } else if (event.target.value === 'US') {
+                    BASE_URL = 'https://api.us.navixy.com/v2/';
                 }
+                adminHashSection.style.display = 'block';
+                showMessage(`Server set to ${event.target.value}`, 'success');
+            }
+        });
 
-                displayMessage(subpaasMessageArea, 'Loading SubPAAS list...', 'loading');
+        submitAdminHashBtn.addEventListener('click', () => {
+            ADMIN_HASH = adminHashInput.value.trim();
+            if (ADMIN_HASH) {
+                trackerChoiceSection.style.display = 'block';
+                showMessage('Admin Hash set successfully!', 'success');
+            } else {
+                showMessage('Please enter a valid Admin Panel Hash.', 'error');
+            }
+        });
 
-                const subpaasListApiUrl = `${baseUrl}/panel/subpaas/list`;
+        trackerChoiceSection.addEventListener('change', async (event) => {
+            // Hide all related sections first, then show the relevant one
+            manualInputSection.style.display = 'none';
+            subpaasSelectionSection.style.display = 'none';
+            trackerListSection.style.display = 'none';
+            cloneSection.style.display = 'none';
+            trackerListDiv.innerHTML = '';
+            SELECTED_TRACKER_IDS = []; // Clear selected trackers before a new choice
+            proceedWithTrackersBtn.style.display = 'none';
 
-                try {
-                    const response = await fetch(subpaasListApiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ hash: adminHash }) // Use Admin Hash
-                    });
+            if (event.target.name === 'trackerChoice') {
+                if (event.target.value === 'preselect') {
+                    subpaasSelectionSection.style.display = 'block';
+                    showMessage('Fetching SubPAAS list...', 'info');
+                    // Reset dropdown before loading
+                    subpaasListSelect.innerHTML = '<option value="">Loading...</option>';
 
-                    if (!response.ok) {
-                        let errorDetails = `HTTP error fetching SubPAAS list! Status: ${response.status}`;
-                         try {
-                             const errorData = await response.json();
-                              if (errorData && errorData.error) {
-                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
-                              } else {
-                                errorDetails += ` - Response: ${JSON.stringify(errorData)}`;
-                              }
-                         } catch (jsonError) { /* ignore */ }
-                        throw new Error(errorDetails);
-                    }
-
-                    const data = await response.json();
-
-                    // ASSUMPTION: Successful SubPAAS list response is a JSON object with a 'list' array property
-                    if (data && Array.isArray(data.list)) {
+                    const data = await fetchData(`${BASE_URL}panel/subpaas/list`, {}, 'admin');
+                    if (data && data.list) {
+                        subpaasListSelect.innerHTML = '<option value="">-- Select a SubPAAS --</option>'; // Default empty option
                         if (data.list.length > 0) {
-                            subpaasSelectElement = document.createElement('select');
-                            subpaasSelectElement.id = 'subpaasSelect';
-                            subpaasSelectElement.setAttribute('size', data.list.length > 10 ? 10 : data.list.length + 1);
-
-
-                            const defaultOption = document.createElement('option');
-                            defaultOption.value = "";
-                            defaultOption.textContent = "-- Select a SubPAAS --";
-                            defaultOption.disabled = true;
-                            defaultOption.selected = true;
-                            subpaasSelectElement.appendChild(defaultOption);
-
                             data.list.forEach(subpaas => {
                                 const option = document.createElement('option');
                                 option.value = subpaas.subpaas_id;
-                                option.textContent = `ID: ${subpaas.subpaas_id}, Name: ${subpaas.name || subpaas.title || 'N/A'}`;
-                                subpaasSelectElement.appendChild(option);
+                                option.textContent = `${subpaas.title} (ID: ${subpaas.subpaas_id})`; // Show ID for clarity
+                                subpaasListSelect.appendChild(option);
                             });
-
-                            subpaasListArea.appendChild(subpaasSelectElement);
-                            displayMessage(subpaasMessageArea, `Found ${data.list.length} SubPAAS. Please select one.`, 'success');
-
-                             // Add Event Listener to the SubPAAS Select (only after creating it)
-                             subpaasSelectElement.addEventListener('change', handleSubpaasSelection);
-
+                            showMessage('SubPAAS list loaded.', 'success');
                         } else {
-                            subpaasListArea.textContent = 'No SubPAAS found for this hash.';
-                            subpaasSelectElement = null;
-                             displayMessage(subpaasMessageArea, 'No SubPAAS found for this hash.', 'info');
+                            subpaasListSelect.innerHTML = '<option value="">No SubPAAS found.</option>';
+                            showMessage('No SubPAAS found for this admin hash. Please check your hash or SubPAAS configuration.', 'info');
                         }
-                    } else if (data && data.error) {
-                         displayMessage(subpaasMessageArea, `API returned an error fetching SubPAAS list: ${data.error.message || data.error}`, 'error');
-                         console.error('Navixy API Error (SubPAAS List):', data.error);
-                         subpaasSelectElement = null;
+                    } else {
+                        // This block executes if fetchData returns null (API error) or data.list is not present
+                        subpaasListSelect.innerHTML = '<option value="">Failed to load SubPAAS.</option>';
+                        // fetchData itself already shows an error message, so no need for another here
                     }
-                    else {
-                        console.error('Unexpected SubPAAS List API response structure:', data);
-                        displayMessage(subpaasMessageArea, `Received SubPAAS list data, but structure was unexpected. Check console.`, 'error');
-                        subpaasSelectElement = null;
+                } else if (event.target.value === 'manual') {
+                    manualInputSection.style.display = 'block';
+                    trackerListSection.style.display = 'block'; // Show for display confirmation later
+                    proceedWithTrackersBtn.style.display = 'block';
+                    cloneSection.style.display = 'none'; // Hide clone section until IDs are processed
+                    showMessage('Enter Object IDs manually.', 'info');
+                } else if (event.target.value === 'onepanel') {
+                    showMessage('Fetching trackers for the main panel...', 'info');
+                    const data = await fetchData(`${BASE_URL}panel/tracker/list`, {}, 'admin');
+                    if (data && data.list) {
+                        displayTrackers(data.list); // This function populates SELECTED_TRACKER_IDS based on selections
+                        trackerListSection.style.display = 'block';
+                        cloneSection.style.display = 'block';
+                        proceedWithTrackersBtn.style.display = 'none'; // No "Proceed" button needed here
+                        showMessage('Trackers for the panel loaded.', 'success');
+                    } else {
+                        // fetchData already shows error message
+                        showMessage('Failed to load trackers for the panel.' + `${errorData.status.description}`, 'error');
+                        
                     }
-
-                } catch (error) {
-                    console.error('Fetch SubPAAS list error:', error);
-                    displayMessage(subpaasMessageArea, `Error fetching SubPAAS list: ${error.message}`, 'error');
-                     subpaasSelectElement = null;
-                }
-            });
-
-            // --- Step 2: Create SubPAAS Session & Step 3: Fetch Trackers (only in preselect flow) ---
-            async function handleSubpaasSelection() {
-                const selectedSubpaasId = this.value;
-                const adminHash = adminHashInput.value.trim();
-
-                // Clear previous tracker list/messages and disable clone button
-                trackerListArea.innerHTML = '';
-                trackerSelectElement = null;
-                currentSubpaasHash = null;
-                cloneButton.disabled = true;
-                displayMessage(trackerMessageArea, '', 'info');
-                displayMessage(cloneMessageArea, '', 'info');
-
-                 if (!baseUrl) {
-                    displayMessage(serverMessageArea, 'Server selection was lost. Please select a server.', 'orange');
-                    resetTool();
-                    return;
-                 }
-
-                 if (!adminHash) {
-                    displayMessage(adminHashMessageArea, 'Admin Hash is missing. Cannot create session.', 'error');
-                     clearMethodSpecificContent();
-                    return;
-                 }
-
-
-                if (!selectedSubpaasId) {
-                     // This is the default "Select a SubPAAS" option
-                     displayMessage(subpaasMessageArea, 'Select a SubPAAS to create session and load trackers.', 'info');
-                    return;
-                }
-
-                displayMessage(subpaasMessageArea, `Creating session for SubPAAS ID ${selectedSubpaasId}...`, 'loading');
-
-                const sessionCreateApiUrl = `${baseUrl}/panel/subpaas/session/create`;
-
-                try {
-                    const response = await fetch(sessionCreateApiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            hash: adminHash, // Use the ADMIN hash
-                            subpaas_id: parseInt(selectedSubpaasId, 10)
-                        })
-                    });
-
-                    if (!response.ok) {
-                        let errorDetails = `HTTP error creating SubPAAS session! Status: ${response.status}`;
-                         try {
-                             const errorData = await response.json();
-                              if (errorData && errorData.error) {
-                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
-                              } else {
-                                errorDetails += ` - Response: ${JSON.stringify(errorData)}`;
-                              }
-                         } catch (jsonError) { /* ignore */ }
-                        throw new Error(errorDetails);
-                    }
-
-                    const data = await response.json();
-
-                    // ASSUMPTION: Successful session create returns a JSON object with the new hash in a property (e.g., 'hash')
-                    if (data && data.hash) {
-                         currentSubpaasHash = data.hash; // Store the obtained subpaas hash
-                         displayMessage(trackerMessageArea, `Session created for SubPAAS ID ${selectedSubpaasId}. Now loading trackers...`, 'success');
-
-                         // --- Now proceed to Step 3: Fetch Trackers using the new subpaas hash ---
-                         fetchTrackers(currentSubpaasHash); // Call the next step
-
-                    } else if (data && data.error) {
-                        displayMessage(trackerMessageArea, `API returned an error creating session: ${data.error.message || data.error}`, 'error');
-                        console.error('Navixy API Error (Session Create):', data.error);
-                    }
-                    else {
-                        console.error('Unexpected Session Create API response structure:', data);
-                        displayMessage(trackerMessageArea, `Received session data, but hash property was not found. Check console.`, 'error');
-                    }
-
-                } catch (error) {
-                    console.error('Fetch Session Create error:', error);
-                    displayMessage(trackerMessageArea, `Error creating SubPAAS session: ${error.message}`, 'error');
-                     trackerListArea.innerHTML = '';
-                     trackerSelectElement = null;
-                     cloneButton.disabled = true;
-                     displayMessage(trackerMessageArea, '', 'info');
                 }
             }
-
-            // --- Step 3: Fetch Trackers using SubPAAS Hash (only in preselect flow) ---
-            async function fetchTrackers(subpaasHash) {
-                trackerListArea.innerHTML = '';
-                trackerSelectElement = null;
-                 cloneButton.disabled = true;
-
-                displayMessage(trackerMessageArea, `Loading trackers using SubPAAS hash...`, 'loading');
-
-                 if (!baseUrl) {
-                    displayMessage(serverMessageArea, 'Server selection was lost. Please select a server.', 'orange');
-                     displayMessage(trackerMessageArea, 'Cannot fetch trackers: Server not selected.', 'error');
-                     resetTool();
-                    return;
-                 }
-
-                if (!subpaasHash) {
-                    displayMessage(trackerMessageArea, 'SubPAAS hash is missing. Session creation might have failed.', 'error');
-                    return;
-                }
-
-                const trackerApiUrl = `${baseUrl}/panel/tracker/list`;
-
-                try {
-                    const response = await fetch(trackerApiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ hash: subpaasHash }) // Use the SUBPAAS HASH here
-                    });
-
-                    if (!response.ok) {
-                         let errorDetails = `HTTP error fetching trackers! Status: ${response.status}`;
-                         try {
-                             const errorData = await response.json();
-                              if (errorData && errorData.error) {
-                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
-                              } else {
-                                 // If response is not JSON, just show the status
-                                 // errorDetails += ` - Response: ${await response.text()}`; // Can get raw text if needed
-                              }
-                         } catch (jsonError) { /* ignore */ }
-                        throw new Error(errorDetails);
-                    }
-
-                    const data = await response.json();
-
-                    // ASSUMPTION: Successful Tracker response is JSON with a 'list' array property
-                    if (data && Array.isArray(data.list)) {
-                        if (data.list.length > 0) {
-                            trackerSelectElement = document.createElement('select');
-                            trackerSelectElement.setAttribute('multiple', 'multiple');
-                            trackerSelectElement.setAttribute('size', data.list.length > 15 ? 15 : data.list.length + 1);
-
-                            data.list.forEach(tracker => {
-                                const option = document.createElement('option');
-                                // ASSUMPTION: Tracker object has 'id' and 'name' properties
-                                option.value = tracker.id;
-                                option.textContent = `ID: ${tracker.id}, Name: ${tracker.label || 'N/A'}`;
-                                trackerSelectElement.appendChild(option);
-                            });
-
-                            trackerListArea.appendChild(trackerSelectElement);
-                            displayMessage(trackerMessageArea, `Found ${data.list.length} tracker(s) for this SubPAAS.`, 'success');
-
-                             // Add input listener to the select element to check if any items are selected
-                             trackerSelectElement.addEventListener('change', updateCloneButtonState);
-
-                             updateCloneButtonState(); // Update button state now that trackers are loaded
-
-
-                        } else {
-                            trackerListArea.textContent = 'No trackers found for this SubPAAS hash.';
-                            displayMessage(trackerMessageArea, 'No trackers found for this SubPAAS hash.', 'info');
-                             trackerSelectElement = null;
-                             updateCloneButtonState(); // Update button state
-                        }
-                    } else if (data && data.error) {
-                         displayMessage(trackerMessageArea, `API returned an error fetching trackers: ${data.error.message || data.error}`, 'error');
-                         console.error('Navixy API Error (Trackers):', data.error);
-                         trackerSelectElement = null;
-                         updateCloneButtonState();
-                    }
-                    else {
-                         console.error('Unexpected Tracker API response structure:', data);
-                         displayMessage(trackerMessageArea, `Received tracker data, but structure was unexpected. Check console.`, 'orange');
-                         trackerSelectElement = null;
-                         updateCloneButtonState();
-                    }
-
-                } catch (error) {
-                    console.error('Fetch tracker error:', error);
-                    displayMessage(trackerMessageArea, `Error fetching tracker data: ${error.message}`, 'error');
-                    trackerListArea.innerHTML = '';
-                    trackerSelectElement = null;
-                    updateCloneButtonState();
-                }
-            }
-
-            // --- Step 4: Clone Selected Trackers ---
-            cloneButton.addEventListener('click', async () => {
-                const adminHash = adminHashInput.value.trim(); // Use the ORIGINAL admin hash
-                const userIdString = userIdInput.value.trim();
-                const userId = parseInt(userIdString, 10);
-
-                displayMessage(cloneMessageArea, '', 'info');
-
-                 if (!baseUrl) {
-                     displayMessage(cloneMessageArea, 'Server not selected.', 'error');
-                     return;
-                 }
-
-                if (!adminHash) {
-                    displayMessage(cloneMessageArea, 'Admin Hash is missing. Cannot perform clone.', 'error');
-                    return;
-                }
-
-                 if (isNaN(userId) || userIdString === '') {
-                     displayMessage(cloneMessageArea, 'Please enter a valid Target User ID.', 'orange');
-                     userIdInput.focus();
-                     return;
-                 }
-
-                let selectedTrackerIds = [];
-
-                if (inputMethod === 'preselect') {
-                    if (!trackerSelectElement) {
-                         displayMessage(cloneMessageArea, 'Tracker list not loaded in pre-select mode.', 'error');
-                         return;
-                    }
-                    for (const option of trackerSelectElement.options) {
-                        if (option.selected) {
-                             const trackerId = parseInt(option.value, 10);
-                             if (!isNaN(trackerId)) {
-                                 selectedTrackerIds.push(trackerId);
-                             } else {
-                                 console.warn(`Skipping invalid selected tracker ID value: ${option.value}`);
-                             }
-                        }
-                    }
-                } else if (inputMethod === 'manual') {
-                    const manualIdsString = manualTrackerIdsTextarea.value.trim();
-                    if (!manualIdsString) {
-                         displayMessage(cloneMessageArea, 'Please enter tracker Object IDs in the manual input box.', 'orange');
-                         manualTrackerIdsTextarea.focus();
-                         return;
-                    }
-                    selectedTrackerIds = manualIdsString
-                        .split(',')
-                        .map(id => id.trim())
-                        .filter(id => id !== '')
-                        .map(id => parseInt(id, 10))
-                        .filter(id => !isNaN(id));
-
-                    if (selectedTrackerIds.length === 0) {
-                         displayMessage(cloneMessageArea, 'No valid tracker Object IDs found in manual input. Ensure they are comma-separated numbers.', 'orange');
-                         manualTrackerIdsTextarea.focus();
-                         return;
-                    }
-
-                } else {
-                     displayMessage(cloneMessageArea, 'Input method not selected.', 'error');
-                     return;
-                }
-
-
-                if (selectedTrackerIds.length === 0) {
-                    displayMessage(cloneMessageArea, 'No trackers selected or entered to clone.', 'orange');
-                    return;
-                }
-
-                displayMessage(cloneMessageArea, `Cloning ${selectedTrackerIds.length} tracker(s) to User ID ${userId}...`, 'loading');
-
-                const cloneApiUrl = `${baseUrl}/panel/tracker/batch_clone`;
-
-                try {
-                    const response = await fetch(cloneApiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            hash: adminHash, // Use the ADMIN hash for cloning
-                            user_id: userId,
-                            tracker_ids: selectedTrackerIds,
-                            ignore_existing: true
-                        })
-                    });
-
-                     if (!response.ok) {
-                         let errorDetails = `HTTP error during cloning! Status: ${response.status}`;
-                         try {
-                             const errorData = await response.json();
-                              if (errorData && errorData.error) {
-                                 errorDetails += ` - API Error: ${errorData.error.message || errorData.error}`;
-                              } else {
-                                // If response is not JSON, just show the status
-                                // errorDetails += ` - Response: ${await response.text()}`; // Can get raw text if needed
-                              }
-                         } catch (jsonError) { /* ignore */ }
-                         throw new Error(errorDetails);
-                     }
-
-                    const data = await response.json();
-
-                    // ASSUMPTION: Successful batch_clone might return a success status or details.
-                    if (data && data.success) {
-                         displayMessage(cloneMessageArea, `Successfully cloned ${selectedTrackerIds.length} tracker(s) to User ID ${userId}.`, 'success');
-                         console.log('Batch Clone Success:', data);
-                         // Optional: Clear user ID and manual input after successful clone
-                         // userIdInput.value = '';
-                         // manualTrackerIdsTextarea.value = '';
-                         // updateCloneButtonState(); // Update button state
-                     } else if (data && data.error) {
-                        displayMessage(cloneMessageArea, `API Error during cloning: ${data.error.message || data.error}`, 'error');
-                        console.error('Navixy API Clone Error:', data.error);
-                     }
-                     else {
-                         console.error('Unexpected successful clone API response structure:', data);
-                         displayMessage(cloneMessageArea, `Cloning request sent, but response structure was unexpected. Check console.`, 'orange');
-                     }
-
-
-                } catch (error) {
-                    console.error('Clone fetch error:', error);
-                    displayMessage(cloneMessageArea, `Error during cloning: ${error.message}`, 'error');
-                }
-            });
-
-             // --- Initial Setup ---
-             resetTool();
-
-
         });
-    </script>
 
+        selectSubpaasBtn.addEventListener('click', async () => {
+            const subpaasId = subpaasListSelect.value;
+            // Validate selection to prevent trying to fetch with "Loading...", "No SubPAAS found.", etc.
+            if (subpaasId && subpaasId !== "Loading..." && subpaasId.includes("-- Select a SubPAAS --") === false && subpaasId !== "No SubPAAS found." && subpaasId !== "Failed to load SubPAAS.") {
+                showMessage('Creating SubPAAS session...', 'info');
+                const sessionData = await fetchData(`${BASE_URL}panel/subpaas/session/create`, { subpaas_id: parseInt(subpaasId) }, 'admin');
+                if (sessionData && sessionData.hash) {
+                    SUBPAAS_HASH = sessionData.hash;
+                    showMessage('SubPAAS session created. Fetching trackers...', 'info');
+                    const trackerData = await fetchData(`${BASE_URL}panel/tracker/list`, {}, 'subpaas');
+                    if (trackerData && trackerData.list) {
+                        displayTrackers(trackerData.list); // This function populates SELECTED_TRACKER_IDS based on selections
+                        trackerListSection.style.display = 'block';
+                        cloneSection.style.display = 'block';
+                        proceedWithTrackersBtn.style.display = 'none'; // No "Proceed" needed
+                        showMessage('Trackers for selected SubPAAS loaded.', 'success');
+                    } else {
+                        // fetchData already shows error message
+                        showMessage('Failed to load trackers for the selected SubPAAS.' + `${errorData.status.description}`, 'error');
+                    }
+                } else {
+                    // fetchData already shows error message
+                    showMessage('Failed to create SubPAAS session.' + `${errorData.status.description}`, 'error');
+                }
+            } else {
+                showMessage('Please select a valid SubPAAS from the list.', 'error');
+            }
+        });
+
+        manualInputTrackersRadio.addEventListener('change', () => {
+            if (manualInputTrackersRadio.checked) {
+                manualInputSection.style.display = 'block';
+                trackerListSection.style.display = 'block';
+                proceedWithTrackersBtn.style.display = 'block';
+                cloneSection.style.display = 'none';
+                trackerListDiv.innerHTML = ''; // Clear previous list
+                SELECTED_TRACKER_IDS = []; // Ensure this is empty for manual input initially
+            }
+        });
+
+        proceedWithTrackersBtn.addEventListener('click', () => {
+            if (manualInputTrackersRadio.checked) {
+                const ids = manualObjectIdsInput.value.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+                if (ids.length > 0) {
+                    SELECTED_TRACKER_IDS = ids;
+                    displayTrackersFromManualInput(ids);
+                    cloneSection.style.display = 'block';
+                    showMessage('Manual object IDs processed.', 'success');
+                } else {
+                    showMessage('Please enter valid comma-separated object IDs.', 'error');
+                }
+            }
+        });
+
+        cloneTrackersBtn.addEventListener('click', async () => {
+            const userId = cloneUserIdInput.value.trim();
+            if (!userId) {
+                showMessage('Please enter a User ID.', 'error');
+                return;
+            }
+
+            if (SELECTED_TRACKER_IDS.length === 0) {
+                showMessage('No trackers selected or provided to clone. Please select trackers or enter IDs.', 'error');
+                return;
+            }
+
+            showMessage('Cloning trackers...', 'info');
+            const payload = {
+                user_id: parseInt(userId),
+                tracker_ids: SELECTED_TRACKER_IDS,
+                ignore_existing: true
+            };
+            // Ensure ADMIN_HASH is used for the batch_clone call
+            const data = await fetchData(`${BASE_URL}panel/tracker/batch_clone`, payload, 'admin');
+
+            if (data && data.success) {
+                if (data.ignored_trackers) {
+                    showMessage('Trackers cloned successfully! Duplicates were not cloned: ' + data.ignored_trackers, 'success');
+                }
+                else {
+                    showMessage('Trackers cloned successfully!', 'success');
+                }
+            } else {
+                showMessage('Failed to clone trackers. Check console for details.' + `${errorData.status.description}`, 'error');
+            }
+        });
+
+
+        // --- Display Functions ---
+        function displayTrackers(trackers) {
+            trackerListDiv.innerHTML = '';
+            SELECTED_TRACKER_IDS = []; // Initialize as empty, then add selected ones
+
+            if (trackers.length === 0) {
+                trackerListDiv.innerHTML = '<p>No trackers found for this selection.</p>';
+                return;
+            }
+
+            trackers.forEach(tracker => {
+                const label = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = tracker.id;
+                checkbox.checked = false; // Still default to checked
+                
+                // Add the ID to SELECTED_TRACKER_IDS ONLY IF it's initially checked
+                // This is where the fix is primarily applied.
+                if (checkbox.checked) {
+                    SELECTED_TRACKER_IDS.push(tracker.id);
+                }
+
+                checkbox.addEventListener('change', (event) => {
+                    if (event.target.checked) {
+                        // Add if checked and not already in array
+                        if (!SELECTED_TRACKER_IDS.includes(parseInt(event.target.value))) {
+                            SELECTED_TRACKER_IDS.push(parseInt(event.target.value));
+                        }
+                    } else {
+                        // Remove if unchecked
+                        SELECTED_TRACKER_IDS = SELECTED_TRACKER_IDS.filter(id => id !== parseInt(event.target.value));
+                    }
+                    console.log("Currently selected tracker IDs:", SELECTED_TRACKER_IDS); // For debugging
+                });
+
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(` ${tracker.label} (ID: ${tracker.id})`));
+                trackerListDiv.appendChild(label);
+            });
+            console.log("Initial selected tracker IDs after display:", SELECTED_TRACKER_IDS); // For debugging
+        }
+
+        function displayTrackersFromManualInput(ids) {
+            trackerListDiv.innerHTML = '';
+            if (ids.length === 0) {
+                trackerListDiv.innerHTML = '<p>No valid object IDs entered.</p>';
+                return;
+            }
+            trackerListDiv.innerHTML = '<p>Manually entered Object IDs (these will be used for cloning):</p>';
+            ids.forEach(id => {
+                const p = document.createElement('p');
+                p.textContent = `Object ID: ${id}`;
+                trackerListDiv.appendChild(p);
+            });
+        }
+    </script>
 </body>
 </html>
