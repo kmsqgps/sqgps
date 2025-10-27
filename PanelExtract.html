@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Navixy Admin — Tracker Inventory</title>
+  <style>
+    :root{
+      --bg:#0f172a;          /* slate-900 */
+      --panel:#111827;       /* gray-900 */
+      --surface:#0b1220;
+      --text:#e5e7eb;        /* gray-200 */
+      --muted:#9ca3af;       /* gray-400 */
+      --accent:#22c55e;      /* green-500 */
+      --accent-2:#60a5fa;    /* blue-400 */
+      --danger:#ef4444;      /* red-500 */
+      --border:#1f2937;      /* gray-800 */
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:linear-gradient(160deg,var(--bg),#0a0f1f 55%, #060a16);
+      color:var(--text);
+      font:400 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    }
+    .container{
+      max-width:1200px; margin:32px auto; padding:0 16px;
+    }
+    header{
+      display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    h1{font:700 24px/1.2 Inter, system-ui, sans-serif; margin:0;}
+    .sub{color:var(--muted); font-size:14px}
+    form{
+      background:rgba(17,24,39,.7);
+      border:1px solid var(--border);
+      border-radius:12px; padding:16px; display:grid; gap:12px; margin:16px 0;
+    }
+    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+    label{font-size:14px; color:var(--muted)}
+    input[type="password"]{
+      background:#0b1220; color:var(--text); border:1px solid var(--border);
+      padding:10px 12px; border-radius:10px; min-width:260px;
+    }
+    fieldset{
+      border:none; padding:0; margin:0; display:flex; gap:16px; align-items:center
+    }
+    .rad{display:flex; align-items:center; gap:6px}
+    .actions{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    button{
+      border:1px solid var(--border); background:var(--surface);
+      color:var(--text); padding:10px 14px; border-radius:10px; cursor:pointer;
+    }
+    button.primary{background:var(--accent); border-color:transparent; color:#04110a; font-weight:600}
+    button.secondary{background:transparent;}
+    button:disabled{opacity:.6; cursor:not-allowed}
+    .status{
+      padding:10px 12px; border:1px dashed var(--border); border-radius:10px; font-size:14px;
+      color:var(--muted);
+    }
+    .status.good{border-color:#14532d; color:#a7f3d0; background:rgba(20,83,45,.15)}
+    .status.bad{border-color:#7f1d1d; color:#fecaca; background:rgba(127,29,29,.15)}
+    .summary{
+      display:flex; gap:16px; flex-wrap:wrap; margin:10px 0 6px;
+    }
+    .chip{
+      border:1px solid var(--border); background:#0b1220; border-radius:999px; padding:6px 10px; font-size:13px; color:var(--muted)
+    }
+    .table-wrap{
+      overflow:auto; border:1px solid var(--border); border-radius:12px; background:rgba(17,24,39,.7);
+    }
+    table{width:100%; border-collapse:collapse; min-width:980px}
+    thead th{
+      position:sticky; top:0; background:#0b1220; z-index:1; font-weight:600; text-align:left;
+      font-size:13px; color:#cbd5e1; padding:10px; border-bottom:1px solid var(--border);
+    }
+    tbody td{
+      padding:9px 10px; border-bottom:1px solid var(--border); font-size:14px; color:#e5e7eb;
+    }
+    tbody tr:nth-child(2n){background:rgba(0,0,0,.15)}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+    .tag{padding:3px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); color:#d1d5db; background:#0b1220}
+    .footer-note{margin-top:16px; font-size:12px; color:var(--muted)}
+    .spinner{
+      width:16px; height:16px; border-radius:50%; border:2.5px solid #1f2937; border-top-color:var(--accent-2); animation:spin .8s linear infinite; display:inline-block; vertical-align:-3px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .right{margin-left:auto}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Navixy Admin — Tracker Inventory</h1>
+        <div class="sub">Fetch trackers, enrich with user &amp; group names, export to CSV.</div>
+      </div>
+    </header>
+
+    <form id="configForm" autocomplete="off">
+      <div class="row">
+        <fieldset aria-label="Server region">
+          <label>Server:</label>
+          <label class="rad"><input type="radio" name="region" value="eu" checked/> EU</label>
+          <label class="rad"><input type="radio" name="region" value="us"/> US</label>
+        </fieldset>
+        <div class="row">
+          <label for="adminHash">Admin Panel Hash</label>
+          <input id="adminHash" type="password" inputmode="text" required placeholder="•••••••••••••••" />
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary">Fetch data</button>
+          <button type="button" id="clearBtn" class="secondary">Clear</button>
+          <button type="button" id="downloadBtn" class="secondary" disabled>Download CSV</button>
+        </div>
+      </div>
+      <div id="status" class="status" role="status" aria-live="polite">Idle.</div>
+    </form>
+
+    <div id="summary" class="summary" hidden>
+      <div class="chip" id="sumTrackers">Trackers: 0</div>
+      <div class="chip" id="sumUsers">Users: 0</div>
+      <div class="chip" id="sumGroups">Groups fetched: 0</div>
+    </div>
+
+    <div class="table-wrap" id="tableWrap" hidden>
+      <table id="resultsTable" aria-label="Tracker details">
+        <thead>
+          <tr>
+            <th>User ID</th>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Tracker label</th>
+            <th>IMEI</th>
+            <th>Tracker ID</th>
+            <th>Phone</th>
+            <th>Group ID</th>
+            <th>Group name</th>
+            <th>Connection</th>
+            <th>Last connection (UTC)</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer-note">
+      Tips: If you see a browser CORS error, call these APIs from your own backend (or a same-origin page). Default group ID is <span class="mono">0</span> and is unnamed by design, so it's labeled “Default” here. 
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      'use strict';
+
+      const $ = (sel, root=document) => root.querySelector(sel);
+      const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+      const BASES = {
+        eu: 'https://api.eu.navixy.com/v2',
+        us: 'https://api.us.navixy.com/v2'
+      };
+
+      const statusEl = $('#status');
+      const tableWrap = $('#tableWrap');
+      const tbody = $('#resultsBody');
+      const summary = $('#summary');
+      const sumTrackers = $('#sumTrackers');
+      const sumUsers = $('#sumUsers');
+      const sumGroups = $('#sumGroups');
+      const downloadBtn = $('#downloadBtn');
+
+      let lastRows = []; // for CSV export
+
+      function setStatus(msg, tone='neutral'){
+        statusEl.textContent = msg;
+        statusEl.classList.remove('good','bad');
+        if (tone==='good') statusEl.classList.add('good');
+        if (tone==='bad') statusEl.classList.add('bad');
+      }
+
+      async function postJSON(url, body){
+        const res = await fetch(url, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const text = await res.text().catch(()=> '');
+          throw new Error(`HTTP ${res.status} ${res.statusText} — ${text.slice(0,200)}`);
+        }
+        const data = await res.json();
+        if (data && data.success === false) {
+          const code = data?.status?.code ?? 'unknown';
+          const desc = data?.status?.description ?? 'API returned success=false';
+          throw new Error(`API error ${code}: ${desc}`);
+        }
+        return data;
+      }
+
+      async function fetchPaginatedList(endpoint, payload, listKey='list'){
+        // Uses 'count' to paginate with offset/limit when available.
+        const limit = 200;
+        let offset = 0;
+        let all = [];
+        let total = Infinity;
+
+        while (all.length < total){
+          const body = Object.assign({}, payload, {offset, limit});
+          const { [listKey]: chunk = [], count } = await postJSON(endpoint, body);
+          if (typeof count === 'number') total = count;
+          all = all.concat(chunk);
+          if (!count || chunk.length === 0) break; // fallback: no pagination support / finished
+          offset += limit;
+        }
+        return all;
+      }
+
+      async function getAllTrackers(baseUrl, adminHash){
+        // /panel/tracker/list → array of tracker objects
+        const endpoint = `${baseUrl}/panel/tracker/list`;
+        return await fetchPaginatedList(endpoint, { hash: adminHash }, 'list');
+      }
+
+      async function getAllUsers(baseUrl, adminHash){
+        // /panel/user/list → array of user objects
+        const endpoint = `${baseUrl}/panel/user/list`;
+        return await fetchPaginatedList(endpoint, { hash: adminHash }, 'list');
+      }
+
+      async function createUserSessionHash(baseUrl, adminHash, userId){
+        // /panel/user/session/create → {hash: "<user_hash>"}
+        const endpoint = `${baseUrl}/panel/user/session/create`;
+        const data = await postJSON(endpoint, { hash: adminHash, user_id: userId });
+        return data.hash;
+      }
+
+      async function getUserGroups(baseUrl, userHash){
+        // /tracker/group/list with user hash
+        const endpoint = `${baseUrl}/tracker/group/list`;
+        const { list = [] } = await postJSON(endpoint, { hash: userHash });
+        // Map id → title
+        const map = new Map(list.map(g => [g.id, g.title]));
+        return map;
+      }
+
+      function buildRows(trackers, userMap, groupMapsByUser){
+        return trackers.map(t => {
+          const u = userMap.get(t.user_id) || {};
+          const gm = groupMapsByUser.get(t.user_id) || new Map();
+          const groupId = t.group_id ?? 0;
+          const groupName = groupId === 0 ? 'Default' : (gm.get(groupId) ?? '');
+          const imei = t?.source?.device_id ?? '';
+          const phone = t?.source?.phone ?? '';
+          const conn = t?.source?.connection_status ?? '';
+          const last = t?.last_connection ?? '';
+
+          return {
+            user_id: t.user_id ?? '',
+            first_name: u.first_name ?? '',
+            last_name: u.last_name ?? '',
+            label: t.label ?? '',
+            imei,
+            tracker_id: t.id ?? '',
+            phone,
+            group_id: groupId,
+            group_name: groupName,
+            connection_status: conn,
+            last_connection: last
+          };
+        });
+      }
+
+      function renderTable(rows){
+        tbody.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        for (const r of rows){
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="mono">${escapeHtml(r.user_id)}</td>
+            <td>${escapeHtml(r.first_name)}</td>
+            <td>${escapeHtml(r.last_name)}</td>
+            <td>${escapeHtml(r.label)}</td>
+            <td class="mono">${escapeHtml(r.imei)}</td>
+            <td class="mono">${escapeHtml(r.tracker_id)}</td>
+            <td class="mono">${escapeHtml(r.phone)}</td>
+            <td class="mono">${escapeHtml(r.group_id)}</td>
+            <td>${escapeHtml(r.group_name)}</td>
+            <td><span class="tag">${escapeHtml(r.connection_status || '—')}</span></td>
+            <td class="mono">${escapeHtml(r.last_connection || '')}</td>
+          `.trim();
+          frag.appendChild(tr);
+        }
+        tbody.appendChild(frag);
+        tableWrap.hidden = rows.length === 0;
+        downloadBtn.disabled = rows.length === 0;
+      }
+
+      function toCSV(rows){
+        const cols = [
+          'user_id','first_name','last_name','label','imei','tracker_id',
+          'phone','group_id','group_name','connection_status','last_connection'
+        ];
+        const header = cols.join(',');
+        const lines = rows.map(r => cols.map(c => csvCell(r[c])).join(','));
+        return [header].concat(lines).join('\r\n');
+      }
+
+      function csvCell(val){
+        const s = (val ?? '').toString();
+        // Escape double quotes and wrap in quotes if needed.
+        const needWrap = /[",\r\n]/.test(s);
+        const escaped = s.replace(/"/g,'""');
+        return needWrap ? `"${escaped}"` : escaped;
+      }
+
+      function escapeHtml(s){
+        return (s ?? '').toString()
+          .replace(/&/g,'&amp;')
+          .replace(/</g,'&lt;')
+          .replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;')
+          .replace(/'/g,'&#39;');
+      }
+
+      function download(filename, text){
+        const blob = new Blob([text], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      $('#configForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        lastRows = [];
+        renderTable(lastRows);
+        summary.hidden = true;
+        const adminHash = $('#adminHash').value.trim();
+        const region = ($('input[name="region"]:checked')?.value || 'eu');
+        const baseUrl = BASES[region];
+
+        if (!adminHash){
+          setStatus('Please enter the Admin Panel Hash.', 'bad');
+          return;
+        }
+
+        try{
+          setStatus(`Fetching trackers <span class="spinner"></span>`, 'neutral');
+
+          // 1) All trackers (admin scope)
+          const trackers = await getAllTrackers(baseUrl, adminHash);
+          setStatus(`Fetched ${trackers.length} trackers. Fetching users <span class="spinner"></span>`);
+
+          // 2) All users (admin scope) → map by id
+          const users = await getAllUsers(baseUrl, adminHash);
+          const userMap = new Map(users.map(u => [u.id, u]));
+
+          // 3) Unique user IDs from trackers → user session hashes
+          const userIdsNeeded = Array.from(new Set(trackers.map(t => t.user_id).filter(Boolean)));
+          setStatus(`Users fetched (${users.length}). Creating ${userIdsNeeded.length} user session(s) <span class="spinner"></span>`);
+
+          const userHashById = new Map();
+          // Limit concurrency to be gentle with API
+          const poolSize = 6;
+          for (let i=0; i<userIdsNeeded.length; i+=poolSize){
+            const chunk = userIdsNeeded.slice(i, i+poolSize);
+            const hashes = await Promise.all(chunk.map(async uid=>{
+              try{
+                const h = await createUserSessionHash(baseUrl, adminHash, uid);
+                return [uid, h];
+              }catch(err){
+                console.warn('Session create failed for user', uid, err);
+                return [uid, null];
+              }
+            }));
+            for (const [uid,h] of hashes) userHashById.set(uid, h);
+          }
+
+          // 4) For each user hash → groups list, map id→title
+          setStatus(`Getting groups per user <span class="spinner"></span>`);
+          const groupMapByUser = new Map();
+          for (let i=0; i<userIdsNeeded.length; i+=poolSize){
+            const chunk = userIdsNeeded.slice(i, i+poolSize);
+            const maps = await Promise.all(chunk.map(async uid=>{
+              const uhash = userHashById.get(uid);
+              if (!uhash) return [uid, new Map()];
+              try{
+                const gm = await getUserGroups(baseUrl, uhash);
+                return [uid, gm];
+              }catch(err){
+                console.warn('Group list failed for user', uid, err);
+                return [uid, new Map()];
+              }
+            }));
+            for (const [uid, gm] of maps) groupMapByUser.set(uid, gm);
+          }
+
+          // 5) Build rows & render
+          lastRows = buildRows(trackers, userMap, groupMapByUser);
+          renderTable(lastRows);
+          downloadBtn.disabled = lastRows.length === 0;
+
+          // 6) Summary
+          sumTrackers.textContent = `Trackers: ${trackers.length}`;
+          sumUsers.textContent = `Users: ${userIdsNeeded.length}`;
+          // Count unique groups fetched (sum of map sizes; default group 0 is implicit, not returned)
+          const groupsFetched = Array.from(groupMapByUser.values())
+            .reduce((acc, m) => acc + m.size, 0);
+          sumGroups.textContent = `Groups fetched: ${groupsFetched}`;
+          summary.hidden = false;
+
+          setStatus(`Done. ${trackers.length} trackers processed from ${region.toUpperCase()} server.`, 'good');
+        }catch(err){
+          console.error(err);
+          setStatus(`Error: ${err.message}`, 'bad');
+        }
+      });
+
+      $('#clearBtn').addEventListener('click', ()=>{
+        $('#adminHash').value = '';
+        lastRows = [];
+        renderTable(lastRows);
+        downloadBtn.disabled = true;
+        summary.hidden = true;
+        setStatus('Cleared. Idle.');
+        $('#adminHash').focus();
+      });
+
+      downloadBtn.addEventListener('click', ()=>{
+        if (!lastRows.length) return;
+        const stamp = new Date().toISOString().replace(/[:.]/g,'-');
+        download(`navixy_trackers_${stamp}.csv`, toCSV(lastRows));
+      });
+    })();
+  </script>
+</body>
+</html>
